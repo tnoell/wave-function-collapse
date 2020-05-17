@@ -1,0 +1,1 @@
+vor Optimierung: ~2550 ms für 30x30
