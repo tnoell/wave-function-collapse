@@ -17,15 +17,19 @@ private:
     const int width;
     std::mt19937 randGen;
     std::vector<std::bitset<MAX_TILES>> fields;
+    std::vector<float> entropies;
     
     Position getPosition(int i) const;
     int getIndex(const Position& pos) const;
     void forEachInField(const std::bitset<MAX_TILES>& field, std::function<void(Tile)> func);
     uint selectFromField(const std::bitset<MAX_TILES>& field, std::function<bool(Tile)> func);
     float calculateEntropy(const std::bitset<MAX_TILES>& field);
+    float checkEntropy(int i);
     int collapseOne();
     void collapseField(std::bitset<MAX_TILES>& field);
     void propagateChanges(Position pos);
+    int getIndex(Position pos);
+    // float getField(Position pos);
     
 public:
     Grid(std::vector<Tile>& tiles, int height, int width);

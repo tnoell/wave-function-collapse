@@ -1,3 +1,5 @@
-*.png
+result.png
+tiles/generated/*
 main
 obj/*
+callgrind.out.*

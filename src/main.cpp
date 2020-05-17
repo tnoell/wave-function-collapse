@@ -39,26 +39,43 @@ using namespace std::chrono;
 // }
 
 
-int main()
+int main(int argc, char *argv[])
 {
     // Image image;
     // image.copyImage();
-    auto start = high_resolution_clock::now();
-    Tile tile("tiles/T.png", "T-Shape");
-    std::vector<Tile> tiles = {tile};
-    tile.addRotations(tiles);
-    Tile::matchTiles(tiles);
-    Grid grid(tiles, 30, 30);
-    try
+    int width = 30, height = 30;
+    if (argc == 3)
     {
-        grid.run();
+        width = atoi(argv[1]);
+        height = atoi(argv[2]);
     }
-    catch(std::string s)
+    bool success = false;
+    uint64_t counter = 0;
+    while (!success)
     {
-        std::cerr << s << '\n';
+        auto start = high_resolution_clock::now();
+        Tile tile("tiles/T.png", "T-Shape");
+        std::vector<Tile> tiles = {tile};
+        tile.addRotations(tiles);
+        tiles.push_back(Tile("tiles/Curve.png", "Curve"));
+        tiles[tiles.size() - 1].addRotations(tiles);
+        Tile::matchTiles(tiles);
+        Grid grid(tiles, width, height);
+        try
+        {
+            counter++;
+            success = true;
+            grid.run();
+        }
+        catch(std::string s)
+        {
+            std::cerr << s << '\n';
+            success = false;
+        }
+        
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<milliseconds>(stop - start);
+        std::cout  << "Took " << duration.count() << " milliseconds\n\n" << std::endl;
     }
-    
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<milliseconds>(stop - start);
-    std::cout  << "Took " << duration.count() << " milliseconds\n\n" << std::endl;
+    std::cout << counter << " attempts\n";
 }

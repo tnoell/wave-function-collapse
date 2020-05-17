@@ -1,15 +1,15 @@
 #include "Grid.hpp"
 
 #include <cmath>
-#include <ctime>
 
+#include <chrono>
 #include <unordered_set>
 
 Grid::Grid(std::vector<Tile>& tiles, int height, int width):
     tiles(tiles),
     height(height),
     width(width),
-    randGen(std::time(0))
+    randGen(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
     std::bitset<MAX_TILES> bits;
     for (uint i = 0; i < tiles.size(); i++)
@@ -17,6 +17,7 @@ Grid::Grid(std::vector<Tile>& tiles, int height, int width):
         bits.set(i); //all tiles can be possible at first
     }
     fields.resize(height * width, bits);
+    entropies.resize(fields.size(), -1);
 }
 
 void Grid::run()
@@ -34,7 +35,7 @@ void Grid::run()
         tiles2d.push_back(std::vector<const Tile*>());
         for (int x = 0; x < width; x++)
         {
-            int iTile = selectFromField((*this)[y][x], [](Tile t) {return true;});
+            int iTile = selectFromField(fields[getIndex({x, y})], [](Tile t) {return true;});
             tiles2d[y].push_back(&(tiles[iTile]));
         }
     }
@@ -79,13 +80,26 @@ uint Grid::selectFromField(const std::bitset<MAX_TILES>& field, std::function<bo
 
 float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
 {
+    // int count = 0;
     float sumWeight = 0;
     float sumWeightLogWeight = 0;
     forEachInField(field, [&](Tile t) {
+        // count++;
         sumWeight += t.weight;
         sumWeightLogWeight += t.weight * log(t.weight);
     });
+    // if (count == 1)
+    // { return 0; }
     return log(sumWeight) - sumWeightLogWeight / sumWeight;
+}
+
+float Grid::checkEntropy(int i)
+{
+    if (entropies[i] < 0)
+    {
+        entropies[i] = calculateEntropy(fields[i]);
+    }
+    return entropies[i];
 }
 
 int Grid::collapseOne()
@@ -94,7 +108,7 @@ int Grid::collapseOne()
     float maxEntropy = 0;
     for (uint i = 0; i < fields.size(); i++)
     {
-        float entropy = calculateEntropy(fields[i]);
+        float entropy = checkEntropy(i);
         //std::cout << fields[i] << " entropy: " << entropy << '\n';
         if (entropy > maxEntropy)
         {
@@ -106,6 +120,7 @@ int Grid::collapseOne()
     {
         std::cout << "collapsing field " << iMaxEntropy << std::endl;
         collapseField(fields[iMaxEntropy]);
+        entropies[iMaxEntropy] = 0;
     }
     return iMaxEntropy;
 }
@@ -146,6 +161,7 @@ void Grid::propagateChanges(Position startPos)
         dirtyPositions.erase(it);
         if (inBounds(pos) && updateField(pos))
         {
+            entropies[getIndex(pos)] = -1;
             dirtyPositions.insert(getIndex(pos.get(top)));
             dirtyPositions.insert(getIndex(pos.get(left)));
             dirtyPositions.insert(getIndex(pos.get(right)));
@@ -156,17 +172,17 @@ void Grid::propagateChanges(Position startPos)
 
 bool Grid::updateField(Position pos)
 {
-    if ((*this)[pos.y][pos.x].count() == 1)
+    if (fields[getIndex(pos)].count() == 1)
     { return false; }
-    std::bitset<MAX_TILES> before = (*this)[pos.y][pos.x];
-    (*this)[pos.y][pos.x] = combinedEdgeMask(pos.get(top), bottom) & combinedEdgeMask(pos.get(right), left)
+    std::bitset<MAX_TILES> before = fields[getIndex(pos)];
+    fields[getIndex(pos)] = combinedEdgeMask(pos.get(top), bottom) & combinedEdgeMask(pos.get(right), left)
     & combinedEdgeMask(pos.get(left), right) & combinedEdgeMask(pos.get(bottom), top);
-    //if (before != (*this)[pos.y][pos.x]) std::cout << pos << " before:\n" << before << ", after:\n" << (*this)[pos.y][pos.x] << "\n";
-    if ((*this)[pos.y][pos.x].none())
+    //if (before != fields[getIndex(pos)]) std::cout << pos << " before:\n" << before << ", after:\n" << fields[getIndex(pos)] << "\n";
+    if (fields[getIndex(pos)].none())
     {
         throw std::string("contradiction encountered");
     }
-    return before != (*this)[pos.y][pos.x];
+    return before != fields[getIndex(pos)];
 }
 
 bool Grid::inBounds(Position pos)
@@ -183,7 +199,7 @@ std::bitset<MAX_TILES> Grid::combinedEdgeMask(Position pos, EdgeDirection edge)
         return mask;
     }
     //std::cout << "accessing field " << std::distance(fields.begin(), ((*this)[pos.y]+pos.x)) << '\n';
-    std::bitset<MAX_TILES> field = (*this)[pos.y][pos.x];
+    std::bitset<MAX_TILES> field = fields[getIndex(pos)];
     forEachInField(field, [&] (Tile t) {
        mask |= t.getEdgeMask(edge); 
        //std::cout << t.getName() << " mask:\n" << t.getEdgeMask(edge) << std::endl;
@@ -199,8 +215,15 @@ std::bitset<MAX_TILES> Grid::combinedEdgeMask(Position pos, EdgeDirection edge)
     return mask;
 }
 
-std::vector<std::bitset<MAX_TILES>>::iterator Grid::operator[](std::size_t y) // to access individual elements by doing grid[y][x]
+
+int Grid::getIndex(Position pos)
 {
-    //std::cout << "accessing row starting at " << std::distance( fields.begin(), fields.begin() + y * width ) << '\n';
-    return fields.begin() + y * width;
+    return pos.y * width + pos.x;
 }
+
+
+// std::vector<std::bitset<MAX_TILES>>::iterator Grid::operator[](std::size_t y) // to access individual elements by doing grid[y][x]
+// {
+//     //std::cout << "accessing row starting at " << std::distance( fields.begin(), fields.begin() + y * width ) << '\n';
+//     return fields.begin() + y * width;
+// }
