@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 {
     // Image image;
     // image.copyImage();
-    int width = 30, height = 30;
+    int width = 100, height = 100;
     if (argc == 3)
     {
         width = atoi(argv[1]);
@@ -54,11 +54,23 @@ int main(int argc, char *argv[])
     while (!success)
     {
         auto start = high_resolution_clock::now();
+        
         Tile tile("tiles/T.png", "T-Shape");
         std::vector<Tile> tiles = {tile};
         tile.addRotations(tiles);
-        tiles.push_back(Tile("tiles/Curve.png", "Curve"));
-        tiles[tiles.size() - 1].addRotations(tiles);
+        
+        // tiles.push_back(Tile("tiles/Curve.png", "Curve"));
+        // tiles[tiles.size() - 1].addRotations(tiles);
+        
+        // tiles.push_back(Tile("tiles/TBlue.png", "TBlue"));
+        // tiles[tiles.size() - 1].addRotations(tiles);
+        
+        // tiles.push_back(Tile("tiles/BlueStraight.png", "BlueStraight"));
+        // tiles[tiles.size() - 1].addRotations(tiles, 1);
+        
+        // tiles.push_back(Tile("tiles/Crossing.png", "Crossing"));
+        // tiles[tiles.size() - 1].addRotations(tiles, 1);
+        
         Tile::matchTiles(tiles);
         Grid grid(tiles, width, height);
         try

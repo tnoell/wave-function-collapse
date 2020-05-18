@@ -2,4 +2,10 @@ vor Optimierung: ~2550 ms für 30x30
 cached entropy:
     ~280ms (debug) für 30x30; ~130ms (release) für 70x70; ~300ms (release) für 100x100, braucht ~300 Versuche
     T-Shape + Curve: ~600ms für 100x100, ~3500ms für 200x200
+correct entropy metric (max entropy -> min entropy)
+    ~400ms für 100x100 T-Shape, 1 Versuch
     
+alle fertigen Felder ans Ende vom Entropy-Array schreiben und beim ersten fertigen abbrechen
+    restliche sortieren? nur die geänderten müssen verschoben werden, dafür kann direkt das erste verwendet werden
+    
+counter für collapsed vs. sich ergebene Felder

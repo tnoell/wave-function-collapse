@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <unordered_set>
+#include <limits>
 
 Grid::Grid(std::vector<Tile>& tiles, int height, int width):
     tiles(tiles),
@@ -80,16 +81,16 @@ uint Grid::selectFromField(const std::bitset<MAX_TILES>& field, std::function<bo
 
 float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
 {
-    // int count = 0;
+    int count = 0;
     float sumWeight = 0;
     float sumWeightLogWeight = 0;
     forEachInField(field, [&](Tile t) {
-        // count++;
+        count++;
         sumWeight += t.weight;
         sumWeightLogWeight += t.weight * log(t.weight);
     });
-    // if (count == 1)
-    // { return 0; }
+    if (count == 1)
+    { return std::numeric_limits<float>::infinity(); } //mark entropy as infinity for completed fields, so they don't get picked in CollapseOne
     return log(sumWeight) - sumWeightLogWeight / sumWeight;
 }
 
@@ -104,25 +105,25 @@ float Grid::checkEntropy(int i)
 
 int Grid::collapseOne()
 {
-    int iMaxEntropy = -1;
-    float maxEntropy = 0;
+    int iMinEntropy = -1;
+    float minEntropy = std::numeric_limits<float>::infinity();
     for (uint i = 0; i < fields.size(); i++)
     {
         float entropy = checkEntropy(i);
         //std::cout << fields[i] << " entropy: " << entropy << '\n';
-        if (entropy > maxEntropy)
+        if (entropy < minEntropy)
         {
-            maxEntropy = entropy;
-            iMaxEntropy = i;
+            minEntropy = entropy;
+            iMinEntropy = i;
         }
     }
-    if (iMaxEntropy != -1)
+    if (iMinEntropy != -1)
     {
-        std::cout << "collapsing field " << iMaxEntropy << std::endl;
-        collapseField(fields[iMaxEntropy]);
-        entropies[iMaxEntropy] = 0;
+        std::cout << "collapsing field " << iMinEntropy << std::endl;
+        collapseField(fields[iMinEntropy]);
+        entropies[iMinEntropy] = std::numeric_limits<float>::infinity();
     }
-    return iMaxEntropy;
+    return iMinEntropy;
 }
 
 void Grid::collapseField(std::bitset<MAX_TILES>& field)
