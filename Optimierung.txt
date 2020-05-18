@@ -4,7 +4,18 @@ cached entropy:
     T-Shape + Curve: ~600ms für 100x100, ~3500ms für 200x200
 correct entropy metric (max entropy -> min entropy)
     ~400ms für 100x100 T-Shape, 1 Versuch
-    
+    ~9750ms für 300x300 T-Shape
+cached edge masks
+    ~8150ms für 300x300
+shrinking entropy array
+    ~15550ms für 300x300, forgot to mark dirtyEntropies elem as clean
+    ~6700ms für 300x300
+    ~5700ms für 300x300 mit std::remove_if
+
+profiling commands:
+make clean; make profiling; valgrind --tool=callgrind ./main
+kcachegrind ./callgrind.out.x
+
 alle fertigen Felder ans Ende vom Entropy-Array schreiben und beim ersten fertigen abbrechen
     restliche sortieren? nur die geänderten müssen verschoben werden, dafür kann direkt das erste verwendet werden
     

@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 {
     // Image image;
     // image.copyImage();
-    int width = 100, height = 100;
+    int width = 3, height = 3;
     if (argc == 3)
     {
         width = atoi(argv[1]);

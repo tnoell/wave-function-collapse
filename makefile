@@ -17,12 +17,17 @@ INCLUDES=-Iinclude -I/usr/include/libpng -isystem include/external
 
 LINKAGES=-lpng
 
-ifeq ($(BUILD),debug)   
+ifeq ($(BUILD),debug)
 # "Debug" build - no optimization, and debugging symbols
 CFLAGS = -O0 -g
 else
-# "Release" build - optimization, and no debug symbols
-CFLAGS = -O2 -s -DNDEBUG
+	ifeq ($(BUILD),profiling)
+		# build for profiling with valgrind
+		CFLAGS = -O2 -g
+	else
+		# "Release" build - optimization, and no debug symbols
+		CFLAGS = -O2 -s -DNDEBUG
+	endif
 endif
 
 CPPFLAGS=$(CFLAGS)
@@ -34,6 +39,9 @@ all: main
 	
 debug:
 	make "BUILD=debug"
+	
+profiling:
+	make "BUILD=profiling"
 	
 main: $(OBJS)
 	$(GPP) -o $@ $^ -no-pie $(CPPFLAGS) $(LINKAGES)

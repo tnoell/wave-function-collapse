@@ -10,7 +10,7 @@ Grid::Grid(std::vector<Tile>& tiles, int height, int width):
     tiles(tiles),
     height(height),
     width(width),
-    randGen(std::chrono::high_resolution_clock::now().time_since_epoch().count())
+    randGen(0)//std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
     std::bitset<MAX_TILES> bits;
     for (uint i = 0; i < tiles.size(); i++)
@@ -18,7 +18,13 @@ Grid::Grid(std::vector<Tile>& tiles, int height, int width):
         bits.set(i); //all tiles can be possible at first
     }
     fields.resize(height * width, bits);
-    entropies.resize(fields.size(), -1);
+    float entropy = calculateEntropy(bits);
+    for (uint i = 0; i < fields.size(); i++)
+    {
+        entropies.push_back({entropy, i});
+    }
+    dirtyEntropies.resize(fields.size(), false);
+    combinedEdgeMasks.resize(fields.size(), {bits, bits, bits, bits});
 }
 
 void Grid::run()
@@ -36,6 +42,10 @@ void Grid::run()
         tiles2d.push_back(std::vector<const Tile*>());
         for (int x = 0; x < width; x++)
         {
+            if (fields[getIndex({x, y})].count() > 1)
+            {
+                std::cout << std::string("field ") << getIndex({x, y}) << " has " << fields[getIndex({x, y})].count() << " possibilities left\n";
+            }
             int iTile = selectFromField(fields[getIndex({x, y})], [](Tile t) {return true;});
             tiles2d[y].push_back(&(tiles[iTile]));
         }
@@ -90,40 +100,68 @@ float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
         sumWeightLogWeight += t.weight * log(t.weight);
     });
     if (count == 1)
-    { return std::numeric_limits<float>::infinity(); } //mark entropy as infinity for completed fields, so they don't get picked in CollapseOne
+    { return 0; }
     return log(sumWeight) - sumWeightLogWeight / sumWeight;
 }
 
-float Grid::checkEntropy(int i)
+float Grid::checkEntropy(int iEntropy)
 {
-    if (entropies[i] < 0)
+    uint iField = entropies[iEntropy].second;
+    if (dirtyEntropies[iField])
     {
-        entropies[i] = calculateEntropy(fields[i]);
+        entropies[iEntropy].first = calculateEntropy(fields[iField]);
+        dirtyEntropies[iField] = false;
     }
-    return entropies[i];
+    return entropies[iEntropy].first;
+}
+
+void Grid::clearCache(uint index)
+{
+    const std::array<std::bitset<MAX_TILES>, 4> empty {std::bitset<MAX_TILES>(), std::bitset<MAX_TILES>(), std::bitset<MAX_TILES>(), std::bitset<MAX_TILES>()};
+    dirtyEntropies[index] = true;
+    combinedEdgeMasks[index] = empty;
+}
+
+
+void eraseElems(std::vector<std::pair<float, uint>>& vec)
+{
+    auto it = std::remove_if(vec.begin(), vec.end(), [&](std::pair<float, uint> pair) { return pair.first <= 0; });
+    vec.erase(it, vec.end());
+    //vec.erase(vec.begin() + i);
 }
 
 int Grid::collapseOne()
 {
-    int iMinEntropy = -1;
+    int iFieldMinEntropy = -1;
     float minEntropy = std::numeric_limits<float>::infinity();
-    for (uint i = 0; i < fields.size(); i++)
+    for (uint iEntropy = 0; iEntropy < entropies.size(); iEntropy++)
     {
-        float entropy = checkEntropy(i);
-        //std::cout << fields[i] << " entropy: " << entropy << '\n';
-        if (entropy < minEntropy)
+        float entropy = checkEntropy(iEntropy);
+        if (entropy > 0 && entropy < minEntropy)
         {
             minEntropy = entropy;
-            iMinEntropy = i;
+            iFieldMinEntropy = entropies[iEntropy].second;
         }
     }
-    if (iMinEntropy != -1)
+    if (iFieldMinEntropy != -1)
     {
-        std::cout << "collapsing field " << iMinEntropy << std::endl;
-        collapseField(fields[iMinEntropy]);
-        entropies[iMinEntropy] = std::numeric_limits<float>::infinity();
+        std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
+        collapseField(fields[iFieldMinEntropy]);
+        clearCache(iFieldMinEntropy);
     }
-    return iMinEntropy;
+    // else
+    // {
+    //     std::cout << "all at inf entropy\n";
+    //     for (uint i = 0; i < fields.size(); i++)
+    //     {
+    //         if (fields[i].count() > 1)
+    //         {
+    //             std::cout << std::string("field ") << i << " has " << fields[i].count() << " possibilities left\n";
+    //         }
+    //     }
+    // }
+    eraseElems(entropies); //remove fields that have been determined, no need to keep entropy
+    return iFieldMinEntropy;
 }
 
 void Grid::collapseField(std::bitset<MAX_TILES>& field)
@@ -151,7 +189,7 @@ void Grid::propagateChanges(Position startPos)
 {
     // auto hash = [&width](const Position& pos) { return std::hash<uint>{}()}
     std::unordered_set<int> dirtyPositions; //may contain indices out of range
-    dirtyPositions.insert(getIndex(startPos.get(top)));
+    dirtyPositions.insert(getIndex(startPos.get(top))); //TODO: check pos when inserting, since x:-1, y:2 returns a valid index which then gets turned into a valid position
     dirtyPositions.insert(getIndex(startPos.get(left)));
     dirtyPositions.insert(getIndex(startPos.get(right)));
     dirtyPositions.insert(getIndex(startPos.get(bottom)));
@@ -162,7 +200,7 @@ void Grid::propagateChanges(Position startPos)
         dirtyPositions.erase(it);
         if (inBounds(pos) && updateField(pos))
         {
-            entropies[getIndex(pos)] = -1;
+            clearCache(getIndex(pos));
             dirtyPositions.insert(getIndex(pos.get(top)));
             dirtyPositions.insert(getIndex(pos.get(left)));
             dirtyPositions.insert(getIndex(pos.get(right)));
@@ -183,6 +221,10 @@ bool Grid::updateField(Position pos)
     {
         throw std::string("contradiction encountered");
     }
+    // if (fields[getIndex(pos)].count() == 1)
+    // {
+    //     std::cout << "field " << getIndex(pos) << " resulted to be " << tiles[selectFromField(fields[getIndex(pos)].count(), [](Tile t) { return true; } )].getName() << std::endl;
+    // }
     return before != fields[getIndex(pos)];
 }
 
@@ -199,12 +241,19 @@ std::bitset<MAX_TILES> Grid::combinedEdgeMask(Position pos, EdgeDirection edge)
         mask.set();
         return mask;
     }
+    mask = combinedEdgeMasks[getIndex(pos)][edge];
+    
+    if (mask.any())
+    {
+        return mask;
+    }
     //std::cout << "accessing field " << std::distance(fields.begin(), ((*this)[pos.y]+pos.x)) << '\n';
     std::bitset<MAX_TILES> field = fields[getIndex(pos)];
     forEachInField(field, [&] (Tile t) {
        mask |= t.getEdgeMask(edge); 
        //std::cout << t.getName() << " mask:\n" << t.getEdgeMask(edge) << std::endl;
     });
+    combinedEdgeMasks[getIndex(pos)][edge] = mask;
     //std::cout << pos << " combined edge mask in direction " << edge << ":\n" << mask << std::endl; 
     // for (uint i = 0; i < tiles.size(); i++)
     // {

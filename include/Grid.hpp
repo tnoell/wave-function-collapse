@@ -17,7 +17,9 @@ private:
     const int width;
     std::mt19937 randGen;
     std::vector<std::bitset<MAX_TILES>> fields;
-    std::vector<float> entropies;
+    std::vector<std::pair<float, uint>> entropies;
+    std::vector<bool> dirtyEntropies;
+    std::vector<std::array<std::bitset<MAX_TILES>, 4>> combinedEdgeMasks;
     
     Position getPosition(int i) const;
     int getIndex(const Position& pos) const;
@@ -25,6 +27,7 @@ private:
     uint selectFromField(const std::bitset<MAX_TILES>& field, std::function<bool(Tile)> func);
     float calculateEntropy(const std::bitset<MAX_TILES>& field);
     float checkEntropy(int i);
+    void clearCache(uint index);
     int collapseOne();
     void collapseField(std::bitset<MAX_TILES>& field);
     void propagateChanges(Position pos);
