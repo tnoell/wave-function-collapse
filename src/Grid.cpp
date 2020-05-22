@@ -10,7 +10,7 @@ Grid::Grid(std::vector<Tile>& tiles, int height, int width):
     tiles(tiles),
     height(height),
     width(width),
-    randGen(0)//std::chrono::high_resolution_clock::now().time_since_epoch().count())
+    randGen(std::chrono::high_resolution_clock::now().time_since_epoch().count())
 {
     std::bitset<MAX_TILES> bits;
     for (uint i = 0; i < tiles.size(); i++)
@@ -145,7 +145,7 @@ int Grid::collapseOne()
     }
     if (iFieldMinEntropy != -1)
     {
-        std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
+        //std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
         collapseField(fields[iFieldMinEntropy]);
         clearCache(iFieldMinEntropy);
     }
@@ -182,7 +182,7 @@ void Grid::collapseField(std::bitset<MAX_TILES>& field)
     });
     field.reset();
     field.set(iTile);
-    std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
+    //std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
 }
 
 void Grid::propagateChanges(Position startPos)

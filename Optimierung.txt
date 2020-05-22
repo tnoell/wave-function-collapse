@@ -16,7 +16,7 @@ profiling commands:
 make clean; make profiling; valgrind --tool=callgrind ./main
 kcachegrind ./callgrind.out.x
 
-alle fertigen Felder ans Ende vom Entropy-Array schreiben und beim ersten fertigen abbrechen
-    restliche sortieren? nur die geänderten müssen verschoben werden, dafür kann direkt das erste verwendet werden
+
+restliche sortieren? nur die geänderten müssen verschoben werden, dafür kann direkt das erste verwendet werden
     
 counter für collapsed vs. sich ergebene Felder

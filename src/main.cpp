@@ -59,17 +59,21 @@ int main(int argc, char *argv[])
         std::vector<Tile> tiles = {tile};
         tile.addRotations(tiles);
         
-        // tiles.push_back(Tile("tiles/Curve.png", "Curve"));
-        // tiles[tiles.size() - 1].addRotations(tiles);
+        tiles.push_back(Tile("tiles/Curve.png", "Curve"));
+        tiles[tiles.size() - 1].addRotations(tiles);
         
-        // tiles.push_back(Tile("tiles/TBlue.png", "TBlue"));
-        // tiles[tiles.size() - 1].addRotations(tiles);
+        tiles.push_back(Tile("tiles/TBlue.png", "TBlue"));
+        tiles[tiles.size() - 1].addRotations(tiles);
         
-        // tiles.push_back(Tile("tiles/BlueStraight.png", "BlueStraight"));
-        // tiles[tiles.size() - 1].addRotations(tiles, 1);
+        tiles.push_back(Tile("tiles/BlueStraight.png", "BlueStraight"));
+        tiles[tiles.size() - 1].addRotations(tiles, 1);
         
-        // tiles.push_back(Tile("tiles/Crossing.png", "Crossing"));
-        // tiles[tiles.size() - 1].addRotations(tiles, 1);
+        tiles.push_back(Tile("tiles/BlueCross.png", "BlueCross"));
+        
+        tiles.push_back(Tile("tiles/Crossing.png", "Crossing"));
+        tiles[tiles.size() - 1].addRotations(tiles, 1);
+        
+        tiles.push_back(Tile("tiles/Clear.png", "Clear", 5));
         
         Tile::matchTiles(tiles);
         Grid grid(tiles, width, height);
