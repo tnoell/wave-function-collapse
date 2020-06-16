@@ -145,7 +145,7 @@ int Grid::collapseOne()
     }
     if (iFieldMinEntropy != -1)
     {
-        //std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
+        std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
         collapseField(fields[iFieldMinEntropy]);
         clearCache(iFieldMinEntropy);
     }
@@ -182,7 +182,7 @@ void Grid::collapseField(std::bitset<MAX_TILES>& field)
     });
     field.reset();
     field.set(iTile);
-    //std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
+    std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
 }
 
 void Grid::propagateChanges(Position startPos)
