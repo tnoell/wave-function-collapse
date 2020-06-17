@@ -13,7 +13,7 @@ shrinking entropy array
     ~5700ms für 300x300 mit std::remove_if
 further optimization
     5478,8ms, removed log spam
-    
+    3463,0, inlined checkEntropy
 
 profiling commands:
 make clean; make profiling
