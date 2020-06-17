@@ -145,21 +145,10 @@ int Grid::collapseOne()
     }
     if (iFieldMinEntropy != -1)
     {
-        std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
+        // std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
         collapseField(fields[iFieldMinEntropy]);
         clearCache(iFieldMinEntropy);
     }
-    // else
-    // {
-    //     std::cout << "all at inf entropy\n";
-    //     for (uint i = 0; i < fields.size(); i++)
-    //     {
-    //         if (fields[i].count() > 1)
-    //         {
-    //             std::cout << std::string("field ") << i << " has " << fields[i].count() << " possibilities left\n";
-    //         }
-    //     }
-    // }
     eraseElems(entropies); //remove fields that have been determined, no need to keep entropy
     return iFieldMinEntropy;
 }
@@ -182,7 +171,7 @@ void Grid::collapseField(std::bitset<MAX_TILES>& field)
     });
     field.reset();
     field.set(iTile);
-    std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
+    // std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
 }
 
 void Grid::propagateChanges(Position startPos)

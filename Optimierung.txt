@@ -11,9 +11,15 @@ shrinking entropy array
     ~15550ms für 300x300, forgot to mark dirtyEntropies elem as clean
     ~6700ms für 300x300
     ~5700ms für 300x300 mit std::remove_if
+further optimization
+    5478,8ms, removed log spam
+    
 
 profiling commands:
-make clean; make profiling; valgrind --tool=callgrind ./main
+make clean; make profiling
+valgrind --tool=callgrind ./main 70 70; valgrind --tool=callgrind ./main 150 150 &
+valgrind --tool=callgrind ./main 300 300 &
+
 kcachegrind ./callgrind.out.x
 
 
