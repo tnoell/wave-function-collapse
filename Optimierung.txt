@@ -14,6 +14,7 @@ shrinking entropy array
 further optimization
     5478,8ms, removed log spam
     3463,0, inlined checkEntropy
+    die gleichen angewandt auf cached edge masks: 3857,8ms
 
 profiling commands:
 make clean; make profiling

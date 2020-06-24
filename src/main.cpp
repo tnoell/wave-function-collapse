@@ -6,6 +6,7 @@
 #include <vector>
 #include <stack>
 #include <functional>
+#include <memory>
 
 #include <algorithm>
 #include <chrono>
@@ -38,22 +39,81 @@ using namespace std::chrono;
 //     return os;
 // }
 
+std::vector<Tile> createTiles(int argc, char *argv[])
+{
+    const int tileCount = 7;
+    std::vector<std::unique_ptr<Tile>> tilesPtrs;
+    
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/GreenT.png", "GreenT")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/GreenCurve.png", "GreenCurve")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueT.png", "BlueT")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueStraight.png", "BlueStraight")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueCross.png", "BlueCross")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/Crossing.png", "Crossing")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/Clear.png", "Clear", 5)));
+    std::array<int, tileCount> tileRotations = {3, 3, 3, 1, 0, 1, 0};
+    
+    std::array<bool, tileCount> enabledTiles;
+    for (unsigned int i = 0; i < enabledTiles.size(); i++)
+    {
+        enabledTiles[i] = true;
+    }
+    
+    if (argc >= 5)
+    {
+        std::ifstream tileset;
+        tileset.open(argv[4], std::ifstream::in);
+        
+        for (unsigned int i = 0; i < enabledTiles.size(); i++)
+        {
+            enabledTiles[i] = tileset.get() == 'y';
+        }
+    }
+    
+    for (int i = tilesPtrs.size() - 1; i >= 0; i--)
+    {
+        if (enabledTiles[i])
+        {
+            tilesPtrs[i]->addRotations(tilesPtrs, tileRotations[i]);
+        }
+        else
+        {
+            tilesPtrs.erase(tilesPtrs.begin() + i);
+        }
+    }
+    
+    Tile::matchTiles(tilesPtrs);
+    
+    std::vector<Tile> tiles;
+    tiles.reserve(tilesPtrs.size());
+    for (auto& tilePtr : tilesPtrs)
+    {
+        tiles.push_back(Tile(*tilePtr));
+    }
+    
+    return tiles;
+}
+
 
 int main(int argc, char *argv[])
 {
     // Image image;
     // image.copyImage();
-    int width = 3, height = 3;
+    int width = 30, height = 30;
     int runs = 1;
+    
     if (argc >= 3)
     {
         width = atoi(argv[1]);
         height = atoi(argv[2]);
     }
-    if (argc == 4)
+    if (argc >= 4)
     {
         runs = atoi(argv[3]);
     }
+    
+    auto tiles = createTiles(argc, argv);
+    
     std::chrono::milliseconds totalTime(0);
     try
     {
@@ -61,27 +121,6 @@ int main(int argc, char *argv[])
         {
             auto start = high_resolution_clock::now();
             
-            Tile tile("tiles/T.png", "T-Shape");
-            std::vector<Tile> tiles = {tile};
-            tile.addRotations(tiles);
-            
-            // tiles.push_back(Tile("tiles/Curve.png", "Curve"));
-            // tiles[tiles.size() - 1].addRotations(tiles);
-            
-            // tiles.push_back(Tile("tiles/TBlue.png", "TBlue"));
-            // tiles[tiles.size() - 1].addRotations(tiles);
-            
-            // tiles.push_back(Tile("tiles/BlueStraight.png", "BlueStraight"));
-            // tiles[tiles.size() - 1].addRotations(tiles, 1);
-            
-            // tiles.push_back(Tile("tiles/BlueCross.png", "BlueCross"));
-            
-            // tiles.push_back(Tile("tiles/Crossing.png", "Crossing"));
-            // tiles[tiles.size() - 1].addRotations(tiles, 1);
-            
-            // tiles.push_back(Tile("tiles/Clear.png", "Clear", 5));
-            
-            Tile::matchTiles(tiles);
             Grid grid(tiles, width, height);
             grid.run();
             

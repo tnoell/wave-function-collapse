@@ -23,6 +23,9 @@
 // }
 
 
+Tile Tile::errorTile("tiles/Error.png", "Error", 0);
+Tile Tile::unknownTile("tiles/Unknown.png", "Unknown", 0);
+
 
 
 png::rgb_pixel operator+(const png::rgb_pixel& a, const png::rgb_pixel& b)
@@ -48,7 +51,28 @@ Tile::Tile(Image image, std::string name, int weight):
     image.write("tiles/generated/" + name + ".png");
 }
 
-void Tile::matchTiles(std::vector<Tile>& tiles)
+Tile::Tile(const Tile& other):
+    image(other.image),
+    name(other.name),
+    edges(other.edges),
+    edgeMasks(other.edgeMasks),
+    weight(other.weight)
+{
+    
+}
+
+// Tile& Tile::operator=(const Tile&& other)
+// {
+//     if (this == &other) return *this;
+    
+//     image = other.image;
+//     name = other.name;
+//     edges = other.edges;
+//     edgeMasks = other.edgeMasks;
+//     weight = other.weight;
+// }
+
+void Tile::matchTiles(std::vector<std::unique_ptr<Tile>>& tiles)
 {
     if (tiles.size() > MAX_TILES)
     {
@@ -61,10 +85,10 @@ void Tile::matchTiles(std::vector<Tile>& tiles)
             for (uint edge = 0; edge < 4; edge++)
             {
                 uint oppositeEdge = 3 - edge;
-                if (tiles[i].edges[edge] == tiles[j].edges[oppositeEdge])
+                if (tiles[i]->edges[edge] == tiles[j]->edges[oppositeEdge])
                 {
-                    tiles[i].edgeMasks[edge].set(j);
-                    tiles[j].edgeMasks[oppositeEdge].set(i);
+                    tiles[i]->edgeMasks[edge].set(j);
+                    tiles[j]->edgeMasks[oppositeEdge].set(i);
                 }
             }
         }
@@ -72,9 +96,9 @@ void Tile::matchTiles(std::vector<Tile>& tiles)
 }
 
 
-void Tile::addRotations(std::vector<Tile>& tiles, int rotations, bool mirror) const
+void Tile::addRotations(std::vector<std::unique_ptr<Tile>>& tiles, int rotations, bool mirror) const
 {
-    assert(rotations > 0 && rotations < 4);
+    assert(rotations < 4);
     Image lastRotation = image;
     for (int i = 0; i < rotations; i++)
     {
@@ -86,7 +110,7 @@ void Tile::addRotations(std::vector<Tile>& tiles, int rotations, bool mirror) co
                 rotatedImage[x][image.get_height() - y - 1] = lastRotation[y][x];
             }
         }
-        tiles.push_back(Tile(rotatedImage, name + "Rotated" + std::to_string(i+1), weight));
+        tiles.push_back(std::unique_ptr<Tile> (new Tile(rotatedImage, name + "Rotated" + std::to_string(i+1), weight)));
         lastRotation = rotatedImage;
     }
     if (mirror)
@@ -99,9 +123,9 @@ void Tile::addRotations(std::vector<Tile>& tiles, int rotations, bool mirror) co
                 mirror[y][x] = image[y][image.get_height() - x];
             }
         }
-        Tile mirrorTile(mirror, name + "Mirrored", weight);
-        tiles.push_back(mirrorTile);
-        mirrorTile.addRotations(tiles, rotations, false);
+        std::unique_ptr<Tile> mirrorTile(new Tile(mirror, name + "Mirrored", weight));
+        mirrorTile->addRotations(tiles, rotations, false);
+        tiles.push_back(std::move(mirrorTile));
     }
 }
     

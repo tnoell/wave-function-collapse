@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <bitset>
+#include <memory>
 
 #include <png++/png.hpp>
 
@@ -20,15 +21,25 @@ private:
     std::string name;
     std::array<TileEdge, 4> edges;
     std::array<std::bitset<MAX_TILES>, 4> edgeMasks;
+    int weight;
+    static Tile errorTile;
+    static Tile unknownTile;
 public:
-    const int weight;
+    
     Tile(std::string path, std::string name, int weight = 1);
     Tile(Image image, std::string name, int weight = 1);
-    static void matchTiles(std::vector<Tile>& tiles);
-    void addRotations(std::vector<Tile>& tiles, int rotations = 3, bool mirror = false) const;
+    Tile(const Tile& other);
+    Tile& operator=(const Tile& other) = delete;
+    // Tile& operator=(const Tile&& other);
+    
+    static void matchTiles(std::vector<std::unique_ptr<Tile>>& tiles);
+    void addRotations(std::vector<std::unique_ptr<Tile>>& tiles, int rotations = 3, bool mirror = false) const;
     const std::bitset<MAX_TILES>& getEdgeMask(EdgeDirection edge) const;
     const std::string& getName() const { return name; }
+    int getWeight() const { return weight; }
     static void drawGrid(std::vector<std::vector<const Tile*>>& tiles);
+    static const Tile& getErrorTile() { return errorTile; };
+    static const Tile& getUnknownTile() { return unknownTile; };
 };
 
 #endif // TILE_H

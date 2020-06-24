@@ -23,8 +23,8 @@ private:
     
     Position getPosition(int i) const;
     int getIndex(const Position& pos) const;
-    void forEachInField(const std::bitset<MAX_TILES>& field, std::function<void(Tile)> func);
-    uint selectFromField(const std::bitset<MAX_TILES>& field, std::function<bool(Tile)> func);
+    void forEachInField(const std::bitset<MAX_TILES>& field, const std::function<void(const Tile&)>& func);
+    uint selectFromField(const std::bitset<MAX_TILES>& field, const std::function<bool(const Tile&)>& func);
     float calculateEntropy(const std::bitset<MAX_TILES>& field);
     float checkEntropy(int i);
     void clearCache(uint index);
@@ -41,6 +41,7 @@ public:
     Grid& operator=(const Grid&) = delete;
     Grid& operator=(const Grid&&) = delete;
     void run();
+    void drawGrid();
     bool updateField(Position pos);
     bool inBounds(Position pos);
     std::bitset<MAX_TILES> combinedEdgeMask(Position pos, EdgeDirection edge);

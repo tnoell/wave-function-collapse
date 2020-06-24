@@ -6,6 +6,10 @@
 #include <unordered_set>
 #include <limits>
 
+#include "Error.hpp"
+
+//#define LOG_ALL_COLLAPSES
+
 Grid::Grid(std::vector<Tile>& tiles, int height, int width):
     tiles(tiles),
     height(height),
@@ -29,13 +33,28 @@ Grid::Grid(std::vector<Tile>& tiles, int height, int width):
 
 void Grid::run()
 {
-    int collapsed = collapseOne();
-    while (collapsed != -1)
+    try {
+        int collapsed = collapseOne();
+        while (collapsed != -1)
+        {
+            propagateChanges(getPosition(collapsed));
+            collapsed = collapseOne();
+        }
+    }
+    catch (Error err)
     {
-        propagateChanges(getPosition(collapsed));
-        collapsed = collapseOne();
+        if (err.code == Error::Code::contradiction)
+        {
+            std::cout << err.message << ", drawing anyways\n";
+        }
+        else throw err;
     }
     
+    drawGrid();
+}
+
+void Grid::drawGrid()
+{
     std::vector<std::vector<const Tile*>> tiles2d;
     for (int y = 0; y < height; y++)
     {
@@ -44,10 +63,23 @@ void Grid::run()
         {
             if (fields[getIndex({x, y})].count() > 1)
             {
-                std::cout << std::string("field ") << getIndex({x, y}) << " has " << fields[getIndex({x, y})].count() << " possibilities left\n";
+                //std::cout << std::string("field ") << getIndex({x, y}) << " has " << fields[getIndex({x, y})].count() << " possibilities left\n";
+                tiles2d[y].push_back(&Tile::getUnknownTile());
             }
-            int iTile = selectFromField(fields[getIndex({x, y})], [](Tile t) {return true;});
-            tiles2d[y].push_back(&(tiles[iTile]));
+            else
+            {
+                try
+                {
+                    int iTile = selectFromField(fields[getIndex({x, y})], [](const Tile& t) {return true;});
+                    tiles2d[y].push_back(&(tiles[iTile]));
+                }
+                catch (Error err)
+                {
+                    if (err.code != Error::Code::noElement)
+                        throw err;
+                    tiles2d[y].push_back(&Tile::getErrorTile());
+                }
+            }
         }
     }
     Tile::drawGrid(tiles2d);
@@ -63,7 +95,7 @@ int Grid::getIndex(const Position& pos) const
     return pos.y * width + pos.x;
 }
 
-void Grid::forEachInField(const std::bitset<MAX_TILES>& field, std::function<void(Tile)> func)
+void Grid::forEachInField(const std::bitset<MAX_TILES>& field, const std::function<void(const Tile&)>& func)
 {
     for (uint i = 0; i < tiles.size(); i++)
     {
@@ -74,7 +106,7 @@ void Grid::forEachInField(const std::bitset<MAX_TILES>& field, std::function<voi
     }
 }
 
-uint Grid::selectFromField(const std::bitset<MAX_TILES>& field, std::function<bool(Tile)> func)
+uint Grid::selectFromField(const std::bitset<MAX_TILES>& field, const std::function<bool(const Tile&)>& func)
 {
     for (uint i = 0; i < tiles.size(); i++)
     {
@@ -86,7 +118,7 @@ uint Grid::selectFromField(const std::bitset<MAX_TILES>& field, std::function<bo
             }
         }
     }
-    throw std::string("No element found. Is this expected? Maybe there is a contradiction?"); //return -1;
+    throw errors[Error::Code::noElement];
 }
 
 float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
@@ -94,10 +126,10 @@ float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
     int count = 0;
     float sumWeight = 0;
     float sumWeightLogWeight = 0;
-    forEachInField(field, [&](Tile t) {
+    forEachInField(field, [&](const Tile& t) {
         count++;
-        sumWeight += t.weight;
-        sumWeightLogWeight += t.weight * log(t.weight);
+        sumWeight += t.getWeight();
+        sumWeightLogWeight += t.getWeight() * log(t.getWeight());
     });
     if (count == 1)
     { return 0; }
@@ -123,7 +155,7 @@ void Grid::clearCache(uint index)
 }
 
 
-void eraseElems(std::vector<std::pair<float, uint>>& vec)
+inline void eraseElems(std::vector<std::pair<float, uint>>& vec)
 {
     auto it = std::remove_if(vec.begin(), vec.end(), [&](std::pair<float, uint> pair) { return pair.first <= 0; });
     vec.erase(it, vec.end());
@@ -145,7 +177,10 @@ int Grid::collapseOne()
     }
     if (iFieldMinEntropy != -1)
     {
-        // std::cout << "collapsing field " << iFieldMinEntropy << std::endl;
+        #ifndef LOG_ALL_COLLAPSES
+        if ((iFieldMinEntropy & (4096-1)) == 0)
+        #endif
+        {   std::cout << "collapsing field " << iFieldMinEntropy << "\n"; }
         collapseField(fields[iFieldMinEntropy]);
         clearCache(iFieldMinEntropy);
     }
@@ -156,22 +191,24 @@ int Grid::collapseOne()
 void Grid::collapseField(std::bitset<MAX_TILES>& field)
 {
     int sumWeight = 0;
-    forEachInField(field, [&](Tile t) {
-        sumWeight += t.weight;
+    forEachInField(field, [&](const Tile& t) {
+        sumWeight += t.getWeight();
     });
     int rnd = randGen() % sumWeight;
     
-    uint iTile = selectFromField(field, [&](Tile t) -> bool {
-        if (rnd < t.weight)
+    uint iTile = selectFromField(field, [&](const Tile& t) -> bool {
+        if (rnd < t.getWeight())
         {
             return true;
         }
-        rnd -= t.weight;
+        rnd -= t.getWeight();
         return false;
     });
     field.reset();
     field.set(iTile);
-    // std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
+    #ifdef LOG_ALL_COLLAPSES
+    std::cout << "collapsed field to " << tiles[iTile].getName() << std::endl;
+    #endif
 }
 
 void Grid::propagateChanges(Position startPos)
@@ -208,12 +245,15 @@ bool Grid::updateField(Position pos)
     //if (before != fields[getIndex(pos)]) std::cout << pos << " before:\n" << before << ", after:\n" << fields[getIndex(pos)] << "\n";
     if (fields[getIndex(pos)].none())
     {
-        throw std::string("contradiction encountered");
+        std::cout << "Contradiction in Field " << pos.x << "|" << pos.y << " (" << getIndex(pos) << ")\n";
+        throw errors[Error::Code::contradiction];
     }
-    // if (fields[getIndex(pos)].count() == 1)
-    // {
-    //     std::cout << "field " << getIndex(pos) << " resulted to be " << tiles[selectFromField(fields[getIndex(pos)].count(), [](Tile t) { return true; } )].getName() << std::endl;
-    // }
+    #ifdef LOG_ALL_COLLAPSES
+    if (fields[getIndex(pos)].count() == 1)
+    {
+        std::cout << "field " << getIndex(pos) << " resulted to be " << tiles[selectFromField(fields[getIndex(pos)].count(), [](const Tile& t) { return true; } )].getName() << std::endl;
+    }
+    #endif
     return before != fields[getIndex(pos)];
 }
 
@@ -238,7 +278,7 @@ std::bitset<MAX_TILES> Grid::combinedEdgeMask(Position pos, EdgeDirection edge)
     }
     //std::cout << "accessing field " << std::distance(fields.begin(), ((*this)[pos.y]+pos.x)) << '\n';
     std::bitset<MAX_TILES> field = fields[getIndex(pos)];
-    forEachInField(field, [&] (Tile t) {
+    forEachInField(field, [&] (const Tile& t) {
        mask |= t.getEdgeMask(edge); 
        //std::cout << t.getName() << " mask:\n" << t.getEdgeMask(edge) << std::endl;
     });
