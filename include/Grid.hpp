@@ -2,6 +2,7 @@
 #define GRID_H
 
 #include <vector>
+#include <unordered_set>
 #include <bitset>
 #include <functional>
 #include <random>
@@ -22,7 +23,6 @@ private:
     std::vector<std::array<std::bitset<MAX_TILES>, 4>> combinedEdgeMasks;
     
     Position getPosition(int i) const;
-    int getIndex(const Position& pos) const;
     void forEachInField(const std::bitset<MAX_TILES>& field, const std::function<void(const Tile&)>& func);
     uint selectFromField(const std::bitset<MAX_TILES>& field, const std::function<bool(const Tile&)>& func);
     float calculateEntropy(const std::bitset<MAX_TILES>& field);
@@ -30,8 +30,11 @@ private:
     void clearCache(uint index);
     int collapseOne();
     void collapseField(std::bitset<MAX_TILES>& field);
+    void insertNeighbours(std::unordered_set<int>& set, const Position& pos) const;
     void propagateChanges(Position pos);
-    int getIndex(Position pos);
+    int getIndex(const Position& pos) const;
+    // int getIndex(Position pos) const;
+    bool isValid(const Position& pos) const;
     // float getField(Position pos);
     
 public:

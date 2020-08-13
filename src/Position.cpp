@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Position Position::get(EdgeDirection dir)
+Position Position::get(const EdgeDirection& dir) const
 {
     int newX = x;
     int newY = y;

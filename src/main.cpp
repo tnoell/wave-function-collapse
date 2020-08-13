@@ -41,17 +41,18 @@ using namespace std::chrono;
 
 std::vector<Tile> createTiles(int argc, char *argv[])
 {
-    const int tileCount = 7;
+    const int tileCount = 8;
     std::vector<std::unique_ptr<Tile>> tilesPtrs;
     
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/GreenT.png", "GreenT")));
+    tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/GreenStraight.png", "GreenStraight")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/GreenCurve.png", "GreenCurve")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueT.png", "BlueT")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueStraight.png", "BlueStraight")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/BlueCross.png", "BlueCross")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/Crossing.png", "Crossing")));
     tilesPtrs.push_back(std::unique_ptr<Tile>(new Tile("tiles/Clear.png", "Clear", 5)));
-    std::array<int, tileCount> tileRotations = {3, 3, 3, 1, 0, 1, 0};
+    std::array<int, tileCount> tileRotations = {3, 1, 3, 3, 1, 0, 1, 0};
     
     std::array<bool, tileCount> enabledTiles;
     for (unsigned int i = 0; i < enabledTiles.size(); i++)

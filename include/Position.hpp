@@ -11,7 +11,7 @@ private:
 public:
     int x;
     int y;
-    Position get(EdgeDirection dir);
+    Position get(const EdgeDirection& dir) const;
 };
 
 

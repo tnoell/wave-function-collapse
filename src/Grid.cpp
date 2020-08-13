@@ -95,6 +95,18 @@ int Grid::getIndex(const Position& pos) const
     return pos.y * width + pos.x;
 }
 
+// int Grid::getIndex(Position pos)
+// {
+//     return pos.y * width + pos.x;
+// }
+
+bool Grid::isValid(const Position& pos) const
+{
+    return (pos.x >= 0 && pos.x < width
+         && pos.y >= 0 && pos.y < height);
+}
+
+
 void Grid::forEachInField(const std::bitset<MAX_TILES>& field, const std::function<void(const Tile&)>& func)
 {
     for (uint i = 0; i < tiles.size(); i++)
@@ -211,14 +223,19 @@ void Grid::collapseField(std::bitset<MAX_TILES>& field)
     #endif
 }
 
+void Grid::insertNeighbours(std::unordered_set<int>& set, const Position& pos) const
+{
+    if (isValid(pos.get(top))) set.insert(getIndex(pos.get(top)));
+    if (isValid(pos.get(right))) set.insert(getIndex(pos.get(right)));
+    if (isValid(pos.get(left))) set.insert(getIndex(pos.get(left)));
+    if (isValid(pos.get(bottom))) set.insert(getIndex(pos.get(bottom)));
+}
+
 void Grid::propagateChanges(Position startPos)
 {
     // auto hash = [&width](const Position& pos) { return std::hash<uint>{}()}
     std::unordered_set<int> dirtyPositions; //may contain indices out of range
-    dirtyPositions.insert(getIndex(startPos.get(top))); //TODO: check pos when inserting, since x:-1, y:2 returns a valid index which then gets turned into a valid position
-    dirtyPositions.insert(getIndex(startPos.get(left)));
-    dirtyPositions.insert(getIndex(startPos.get(right)));
-    dirtyPositions.insert(getIndex(startPos.get(bottom)));
+    insertNeighbours(dirtyPositions, startPos);
     while (!dirtyPositions.empty())
     {
         auto it = dirtyPositions.begin();
@@ -227,10 +244,7 @@ void Grid::propagateChanges(Position startPos)
         if (inBounds(pos) && updateField(pos))
         {
             clearCache(getIndex(pos));
-            dirtyPositions.insert(getIndex(pos.get(top)));
-            dirtyPositions.insert(getIndex(pos.get(left)));
-            dirtyPositions.insert(getIndex(pos.get(right)));
-            dirtyPositions.insert(getIndex(pos.get(bottom)));
+            insertNeighbours(dirtyPositions, pos);
         }
     }
 }
@@ -292,12 +306,6 @@ std::bitset<MAX_TILES> Grid::combinedEdgeMask(Position pos, EdgeDirection edge)
     //     }
     // }
     return mask;
-}
-
-
-int Grid::getIndex(Position pos)
-{
-    return pos.y * width + pos.x;
 }
 
 
