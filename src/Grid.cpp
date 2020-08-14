@@ -148,7 +148,7 @@ float Grid::calculateEntropy(const std::bitset<MAX_TILES>& field)
     return log(sumWeight) - sumWeightLogWeight / sumWeight;
 }
 
-inline float Grid::checkEntropy(int iEntropy)
+float Grid::checkEntropy(int iEntropy)
 {
     uint iField = entropies[iEntropy].second;
     if (dirtyEntropies[iField])

@@ -26,7 +26,7 @@ else
 		CFLAGS = -O2 -g
 	else
 		# "Release" build - optimization, and no debug symbols
-		CFLAGS = -O2 -s -DNDEBUG
+		CFLAGS = -O3 -s -DNDEBUG
 	endif
 endif
 
