@@ -24,11 +24,9 @@ valgrind --tool=callgrind ./main 300 300 &
 kcachegrind ./callgrind.out.x
 
 
-restliche sortieren? nur die geänderten müssen verschoben werden, dafür kann direkt das erste verwendet werden
-    absteigend sortieren, damit die niedrigsten Werte hinten stehen und leicht entfernt werden können
-oder: 100 niedrigste Entropien speichern (sortiert)
+100 niedrigste Entropien speichern (priority queue/heap)
     wenn ein Entropiewert sich ändert, mit dem letzten Wert vergleichen
     ohne shrinking entropy vector
-beide Ansätze benötigen einen Stack der die dirty Felder enthält
+    benötigt einen Stack der die dirty Felder enthält
     
 counter für collapsed vs. sich ergebene Felder

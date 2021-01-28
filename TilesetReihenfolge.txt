@@ -1,0 +1,9 @@
+Reihenfolge der Tiles, wie sie in den .tilesets markiert ist:
+GreenT
+GreenStraight
+GreenCurve
+BlueT
+BlueStraight
+BlueCross
+Crossing
+Clear
